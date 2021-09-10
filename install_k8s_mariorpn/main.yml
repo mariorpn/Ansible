@@ -1,0 +1,56 @@
+- hosts: all
+  become: yes
+  user: root
+  gather_facts: no
+
+  pre_tasks:
+  - name: limpando repo
+    apt:
+      autoclean: yes
+
+  - name: atualizando repo
+    apt:
+      update_cache: yes
+
+  - name: instalando pacotes
+    apt:
+      pkg:
+      - python
+      - python3
+      - bash-completion
+      state: latest
+
+  - name: efetuando update
+    apt:
+      upgrade: full
+
+  - name: limpando repo
+    apt:
+      autoclean: yes
+
+  - name: limpando pacotes
+    apt:
+      autoremove: yes
+
+  - name: desabilitando swap
+    shell:
+      cmd: swapoff -a
+
+  - name: removendo entrada no fstab
+    shell:
+      cmd: sed -i '/ swap / s/^/#/' /etc/fstab
+
+  roles:
+  - { role: install-k8s, tags: ["install_k8s_role"]}
+
+- hosts: k8s-master
+  become: yes
+  user: root
+  roles:
+  - { role: create-cluster, tags: ["create_cluster_role"]}
+
+- hosts: k8s-workers
+  become: yes
+  user: root
+  roles:
+  - { role: join-workers, tags: ["join_workers_role"]}

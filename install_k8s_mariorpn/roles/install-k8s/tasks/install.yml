@@ -1,0 +1,57 @@
+- name: Baixando o Docker
+  shell:
+    cmd: curl -fsSL https://get.docker.com | bash -
+
+#- name: Criando diretorio
+#  raw: mkdir /etc/docker
+
+#- name: Corrrigindo cfgroups
+#  shell: |
+#cat <<EOF | tee -a /etc/docker/daemon.json
+#{
+#  "exec-opts": ["native.cgroupdriver=systemd"],
+#  "log-driver": "json-file",
+#  "log-opts": {
+#    "max-size": "100m"
+#  },
+#  "storage-driver": "overlay2"
+#}
+#EOF
+
+- name: Daemon reload systemd
+  #raw: systemctl --now enable docker; systemctl daemon-reload; systemctl restart docker
+  systemd:
+    enabled: yes
+    state: restarted     
+    daemon_reload: yes
+    name: docker
+
+- name: Adicionando as chaves repo k8s no apt
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Adicionando o repo do k8s
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Adicionando as chaves repo helm no apt
+  apt_key:
+    url: https://baltocdn.com/helm/signing.asc
+    state: present
+
+- name: Adicionando o repo do helm
+  apt_repository:
+    repo: deb https://baltocdn.com/helm/stable/debian/ all main
+    state: present
+
+- name: Install k8s packages
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - kubelet
+    - kubeadm
+    - kubectl
+    - helm
